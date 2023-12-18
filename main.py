@@ -95,7 +95,59 @@ class MainWindow(QMainWindow):
 class EditDialog(QDialog):
     def __init__(self):
         super().__init__()
-        pass
+        self.setWindowTitle("Update Student Data")
+        self.setFixedHeight(300)
+        self.setFixedWidth(300)
+
+        layout = QVBoxLayout()
+        # Get student name from selected row
+        index = main_window.table.currentRow()
+        student_name = main_window.table.item(index, 1).text()
+
+        # Get id from selected row
+        self.student_id = main_window.table.item(index, 0).text()
+
+        # Add student name widget
+        self.student_name = QLineEdit(student_name)
+        layout.addWidget(self.student_name)
+
+        # Add combo box of course
+        course_name = main_window.table.item(index, 2).text()
+        self.course_name = QComboBox()
+        self.course_name.addItems(("Biology", "Math", "Astronomy", "Physics"))
+        self.course_name.setCurrentText(course_name)
+        layout.addWidget(self.course_name)
+
+        # Add mobile widget
+        mobile = main_window.table.item(index, 3).text()
+        self.mobile = QLineEdit(mobile)
+        layout.addWidget(self.mobile)
+
+        # Add a submit button
+        button = QPushButton("Update")
+        button.clicked.connect(self.update_student)
+        layout.addWidget(button)
+
+        self.setLayout(layout)
+
+    def update_student(self):
+        name = self.student_name.text()
+        course = self.course_name.itemText(self.course_name.currentIndex())
+        mobile = self.mobile.text()
+        if name != "" and mobile != "":
+            connection = sqlite3.connect("database.db")
+            cursor = connection.cursor()
+            cursor.execute("UPDATE students SET name = ?, course = ?, mobile = ? WHERE id = ?",
+                           (name, course, mobile, self.student_id))
+            connection.commit()
+            cursor.close()
+            connection.close()
+
+            # Refresh the table
+            main_window.load_data()
+
+            # Close after update
+            self.accept()
 
 
 class DeleteDialog(QDialog):
@@ -147,8 +199,12 @@ class InsertDialog(QDialog):
             connection.commit()
             cursor.close()
             connection.close()
+
+            # Refresh the table
             main_window.load_data()
-            self.accept()  # close after submit
+
+            # Close after submit
+            self.accept()
 
 
 class SearchDialog(QDialog):
